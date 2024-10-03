@@ -3,175 +3,175 @@
 # Script to recreate a package from installed files
 # Author: Tales A. Mendonça (talesam@gmail.com)
 # Translator: Assistant
-# Version: 1.0.0
+# Version: 1.0.1
 # Date: $(date +%Y-%m-%d)
 
 # Define colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-NC='\033[0m' # No Color
+red='\033[0;31m'
+green='\033[0;32m'
+yellow='\033[0;33m'
+nc='\033[0m' # No Color
 
 # Check if the user provided a package name
 if [ -z "$1" ]; then
-    echo -e "${RED}Error: No package name provided.${NC}"
+    echo -e "${red}Error: No package name provided.${nc}"
     echo "Usage: $0 package_name"
     exit 1
 fi
 
-PACKAGE="$1"
+package="$1"
 
 # Temporary working directory
-WORKDIR="$HOME/recreate_package_$PACKAGE"
+workDir="$HOME/recreate_package_$package"
 
 # Directory to store recreated packages
-OUTPUT_DIR="$HOME/recreated_packages"
+outputDir="$HOME/recreated_packages"
 
-PKGDIR="$WORKDIR/pkg"
-FILE_LIST="$WORKDIR/file_list.txt"
-RELATIVE_FILE_LIST="$WORKDIR/relative_file_list.txt"
-PKGINFO="$PKGDIR/.PKGINFO"
-MTREE="$PKGDIR/.MTREE"
+pkgDir="$workDir/pkg"
+fileList="$workDir/file_list.txt"
+relativeFileList="$workDir/relative_file_list.txt"
+pkgInfo="$pkgDir/.PKGINFO"
+mTree="$pkgDir/.MTREE"
 
-echo -e "${YELLOW}Recreating package '$PACKAGE'...${NC}"
+echo -e "${yellow}Recreating package '$package'...${nc}"
 
 # Step 1: Check if the package is installed
-if ! pacman -Q "$PACKAGE" &>/dev/null; then
-    echo -e "${RED}Error: Package '$PACKAGE' is not installed on the system.${NC}"
+if ! pacman -Q "$package" &>/dev/null; then
+    echo -e "${red}Error: Package '$package' is not installed on the system.${nc}"
     exit 1
 fi
 
 # Create working directory and output directory
-mkdir -p "$PKGDIR"
-mkdir -p "$OUTPUT_DIR"
+mkdir -p "$pkgDir"
+mkdir -p "$outputDir"
 
 # Step 2: List all files installed by the package
-echo -e "${GREEN}Listing files installed by the package...${NC}"
-pacman -Qlq "$PACKAGE" > "$FILE_LIST"
+echo -e "${green}Listing files installed by the package...${nc}"
+pacman -Qlq "$package" > "$fileList"
 if [ $? -ne 0 ]; then
-    echo -e "${RED}Error listing package files.${NC}"
+    echo -e "${red}Error listing package files.${nc}"
     exit 1
 fi
 
 # Create list of files with relative paths
-sed 's|^/||' "$FILE_LIST" > "$RELATIVE_FILE_LIST"
+sed 's|^/||' "$fileList" > "$relativeFileList"
 
 # Step 3: Copy files to the pkg directory using sudo
-echo -e "${GREEN}Copying files to the packaging directory...${NC}"
-TOTAL_SIZE=0
+echo -e "${green}Copying files to the packaging directory...${nc}"
+totalSize=0
 while IFS= read -r file; do
     if [ -f "/$file" ]; then
         dir=$(dirname "$file")
-        sudo mkdir -p "$PKGDIR/$dir"
-        sudo cp -a "/$file" "$PKGDIR/$dir/"
-        FILE_SIZE=$(du -b "/$file" | cut -f1)
-        TOTAL_SIZE=$((TOTAL_SIZE + FILE_SIZE))
-        echo "Copied: /$file ($(numfmt --to=iec-i --suffix=B --format="%.2f" $FILE_SIZE))"
+        sudo mkdir -p "$pkgDir/$dir"
+        sudo cp -a "/$file" "$pkgDir/$dir/"
+        fileSize=$(du -b "/$file" | cut -f1)
+        totalSize=$((totalSize + fileSize))
+        echo "Copied: /$file ($(numfmt --to=iec-i --suffix=B --format="%.2f" $fileSize))"
     elif [ -d "/$file" ]; then
-        sudo mkdir -p "$PKGDIR/$file"
+        sudo mkdir -p "$pkgDir/$file"
         echo "Created directory: /$file"
     fi
-done < "$RELATIVE_FILE_LIST"
+done < "$relativeFileList"
 
-echo "Total size of copied files: $(numfmt --to=iec-i --suffix=B --format="%.2f" $TOTAL_SIZE)"
+echo "Total size of copied files: $(numfmt --to=iec-i --suffix=B --format="%.2f" $totalSize)"
 
 # Adjust permissions of copied files to the current user
-sudo chown -R $(whoami):$(whoami) "$PKGDIR"
+sudo chown -R $(whoami):$(whoami) "$pkgDir"
 
 # Step 4: Create the .PKGINFO file
-echo -e "${GREEN}Creating .PKGINFO file...${NC}"
+echo -e "${green}Creating .PKGINFO file...${nc}"
 # Use LANG=C to ensure pacman output is in English
-PKGVER=$(LANG=C pacman -Qi "$PACKAGE" | grep "^Version" | awk '{print $3}')
-PKGDESC=$(LANG=C pacman -Qi "$PACKAGE" | grep "^Description" | cut -d ':' -f2- | sed 's/^ //')
-URL=$(LANG=C pacman -Qi "$PACKAGE" | grep "^URL" | awk '{print $3}')
-LICENSE=$(LANG=C pacman -Qi "$PACKAGE" | grep "^Licenses" | cut -d ':' -f2- | sed 's/^ //')
-ARCH=$(uname -m)
-SIZE=$(du -bs "$PKGDIR" | cut -f1)
-BUILDDATE=$(date +%s)
-PACKAGER="$(whoami) <$(whoami)@$(hostname)>"
-DEPENDS=$(LANG=C pacman -Qi "$PACKAGE" | grep "^Depends On" | cut -d ':' -f2- | sed 's/^ //' | sed 's/None//')
+pkgVer=$(LANG=C pacman -Qi "$package" | grep "^Version" | awk '{print $3}')
+pkgDesc=$(LANG=C pacman -Qi "$package" | grep "^Description" | cut -d ':' -f2- | sed 's/^ //')
+url=$(LANG=C pacman -Qi "$package" | grep "^URL" | awk '{print $3}')
+license=$(LANG=C pacman -Qi "$package" | grep "^Licenses" | cut -d ':' -f2- | sed 's/^ //')
+arch=$(uname -m)
+size=$(du -bs "$pkgDir" | cut -f1)
+buildDate=$(date +%s)
+packager="$(whoami) <$(whoami)@$(hostname)>"
+depends=$(LANG=C pacman -Qi "$package" | grep "^Depends On" | cut -d ':' -f2- | sed 's/^ //' | sed 's/None//')
 
-cat <<EOF > "$PKGINFO"
-# Generated by recreate-package.sh v1.0.0
-pkgname = $PACKAGE
-pkgver = $PKGVER
-pkgdesc = $PKGDESC
-url = $URL
-builddate = $BUILDDATE
-packager = $PACKAGER
-size = $SIZE
-arch = $ARCH
-license = $LICENSE
+cat <<EOF > "$pkgInfo"
+# Generated by recreate-package.sh v1.0.1
+pkgname = $package
+pkgver = $pkgVer
+pkgdesc = $pkgDesc
+url = $url
+builddate = $buildDate
+packager = $packager
+size = $size
+arch = $arch
+license = $license
 EOF
 
 # Add dependencies
-if [ -n "$DEPENDS" ]; then
-    echo "$DEPENDS" | tr ' ' '\n' | while read -r depend; do
+if [ -n "$depends" ]; then
+    echo "$depends" | tr ' ' '\n' | while read -r depend; do
         if [ -n "$depend" ]; then
-            echo "depend = $depend" >> "$PKGINFO"
+            echo "depend = $depend" >> "$pkgInfo"
         fi
     done
 fi
 
 # Step 5: Create the .MTREE file
-echo -e "${GREEN}Creating .MTREE file...${NC}"
-cd "$PKGDIR" || exit 1
+echo -e "${green}Creating .MTREE file...${nc}"
+cd "$pkgDir" || exit 1
 LANG=C bsdtar -c --format=mtree \
     --options='!all,use-set,type,uid,gid,mode,time,size,md5,sha256,link' \
-    . > "$MTREE"
+    . > "$mTree"
 
 if [ $? -ne 0 ]; then
-    echo -e "${RED}Error creating .MTREE file.${NC}"
+    echo -e "${red}Error creating .MTREE file.${nc}"
     exit 1
 fi
 
 # Generate date and time in the desired format
-DATE=$(date +%y.%m.%d)
-TIME=$(date +%H%M)
+date=$(date +%y.%m.%d)
+time=$(date +%H%M)
 
 # Define the final package name with date, time, and architecture
-FINAL_PACKAGE="${OUTPUT_DIR}/${PACKAGE}-${PKGVER}-${ARCH}.pkg.tar.zst"
+finalPackage="${outputDir}/${package}-${pkgVer}-${arch}.pkg.tar.zst"
 
 # Step 6: Package the files using fakeroot
-echo -e "${GREEN}Creating the package...${NC}"
-cd "$PKGDIR" || exit 1
-fakeroot -- env LANG=C bsdtar -c --zstd -f "$FINAL_PACKAGE" .PKGINFO .MTREE *
+echo -e "${green}Creating the package...${nc}"
+cd "$pkgDir" || exit 1
+fakeroot -- env LANG=C bsdtar -c --zstd -f "$finalPackage" .PKGINFO .MTREE *
 
 if [ $? -ne 0 ]; then
-    echo -e "${RED}Error creating the package.${NC}"
+    echo -e "${red}Error creating the package.${nc}"
     exit 1
 fi
 
 # Step 7: Generate the .md5 file
-echo -e "${GREEN}Generating .md5 file...${NC}"
-md5sum "$FINAL_PACKAGE" > "${FINAL_PACKAGE}.md5"
+echo -e "${green}Generating .md5 file...${nc}"
+md5sum "$finalPackage" > "${finalPackage}.md5"
 if [ $? -ne 0 ]; then
-    echo -e "${RED}Error generating .md5 file.${NC}"
+    echo -e "${red}Error generating .md5 file.${nc}"
     exit 1
 fi
 
 # Step 8: Verify the created package
-if [ -f "$FINAL_PACKAGE" ]; then
-    echo -e "${GREEN}Package created successfully: ${FINAL_PACKAGE}${NC}"
-    echo -e "${GREEN}.md5 file created: ${FINAL_PACKAGE}.md5${NC}"
-    echo -e "${YELLOW}To install the package, run:${NC}"
-    echo "sudo pacman -U $FINAL_PACKAGE"
+if [ -f "$finalPackage" ]; then
+    echo -e "${green}Package created successfully: ${finalPackage}${nc}"
+    echo -e "${green}.md5 file created: ${finalPackage}.md5${nc}"
+    echo -e "${yellow}To install the package, run:${nc}"
+    echo "sudo pacman -U $finalPackage"
     
     # Show the size of the created package
-    PACKAGE_SIZE=$(du -h "$FINAL_PACKAGE" | cut -f1)
-    echo -e "${GREEN}Size of created package: ${PACKAGE_SIZE}${NC}"
+    packageSize=$(du -h "$finalPackage" | cut -f1)
+    echo -e "${green}Size of created package: ${packageSize}${nc}"
 else
-    echo -e "${RED}Error: Package was not created.${NC}"
+    echo -e "${red}Error: Package was not created.${nc}"
     exit 1
 fi
 
 # Clean up temporary files (optional)
-read -p "Do you want to remove temporary files? [y/N]: " RESPONSE
-if [[ "$RESPONSE" =~ ^([yY])$ ]]; then
-    sudo rm -rf "$WORKDIR"
-    echo -e "${GREEN}Temporary files removed.${NC}"
+read -p "Do you want to remove temporary files? [y/N]: " response
+if [[ "$response" =~ ^([yY])$ ]]; then
+    sudo rm -rf "$workDir"
+    echo -e "${green}Temporary files removed.${nc}"
 else
-    echo -e "${YELLOW}Temporary files kept in $WORKDIR.${NC}"
+    echo -e "${yellow}Temporary files kept in $workDir.${nc}"
 fi
 
 exit 0
