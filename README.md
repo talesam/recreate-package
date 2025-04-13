@@ -1,72 +1,165 @@
 # Package Recreator for Arch Linux
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Version-1.1.0-blue.svg" alt="Version"/>
+  <img src="https://img.shields.io/badge/Arch-Linux-1793D1.svg?logo=arch-linux" alt="Arch Linux"/>
+  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"/>
+</p>
+
 ## Overview
 
-Package Recreator is a bash script designed to recreate installable packages from already installed software on Arch Linux and Arch-based distributions (such as Manjaro, BigLinux, EndeavourOS, etc.). This tool is particularly useful for system administrators, package maintainers, and advanced users who need to replicate installed packages without access to the original package files.
+Package Recreator is a powerful bash utility designed to recreate installable packages from already installed software on Arch Linux and Arch-based distributions. The tool extracts installed files, generates proper metadata, and packages everything into a format compatible with the pacman package manager.
 
-## Version
-
-Current version: 1.0.0
+This tool is particularly valuable for:
+- System administrators who need to replicate custom packages across multiple systems
+- Package maintainers working on modifications to existing packages
+- Advanced users who want to backup or distribute modified packages
+- Troubleshooting and analyzing package contents
 
 ## Features
 
-- Recreates packages from installed files
-- Generates proper metadata (.PKGINFO and .MTREE files)
-- Creates a compressed package file compatible with pacman
-- Generates an MD5 checksum for the created package
-- Supports all Arch-based distributions
+- **Complete Package Recreation**: Rebuilds packages from installed files with proper structure
+- **Modern Interface**: Features an elegant, color-coded terminal interface for better readability
+- **Comprehensive Metadata**: Generates proper .PKGINFO and .MTREE files with dependencies
+- **Compression Support**: Creates optimized zstd-compressed packages compatible with pacman
+- **Verification**: Automatically generates MD5 checksums for package integrity
+- **Permissions Handling**: Properly manages file permissions and ownership
+- **Detailed Reporting**: Provides size information and progress updates
+- **Cleanup Options**: Offers optional cleanup of temporary files
 
 ## Requirements
 
-- Arch Linux or an Arch-based distribution (Manjaro, BigLinux, etc.)
+- Arch Linux or an Arch-based distribution (Manjaro, BigLinux, EndeavourOS, etc.)
 - `pacman` package manager
-- `fakeroot` and `sudo` for file operations
-- `bsdtar` for creating package archives
+- `fakeroot` for proper permission handling
+- `sudo` for accessing system files
+- `bsdtar` for archive creation
+- `zstd` compression support
 
 ## Installation
 
-1. Clone this repository or download the `recreate-package.sh` script.
-2. Make the script executable:
-   ```
-   chmod +x recreate-package.sh
-   ```
+### Option 1: Direct Download
+
+```bash
+# Download the script
+curl -O https://raw.githubusercontent.com/yourusername/package-recreator/main/recreate-package.sh
+
+# Make it executable
+chmod +x recreate-package.sh
+
+# Optionally, move to a directory in your PATH
+sudo mv recreate-package.sh /usr/local/bin/recreate-package
+```
+
+### Option 2: Clone Repository
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/package-recreator.git
+
+# Navigate to the directory
+cd package-recreator
+
+# Make the script executable
+chmod +x recreate-package.sh
+```
 
 ## Usage
 
+### Basic Usage
+
 Run the script with the name of the installed package you want to recreate:
 
-```
+```bash
 ./recreate-package.sh package_name
 ```
 
-For example:
-```
+### Examples
+
+**Recreate Firefox package:**
+```bash
 ./recreate-package.sh firefox
 ```
 
-The script will:
-1. Check if the package is installed
-2. List and copy all files installed by the package
-3. Generate necessary metadata files
-4. Create a new package file (.pkg.tar.zst)
-5. Generate an MD5 checksum
+**Recreate multiple packages:**
+```bash
+for pkg in firefox libreoffice-fresh vlc; do
+  ./recreate-package.sh $pkg
+done
+```
 
-The recreated package will be saved in the `~/recreated_packages` directory.
+**Recreate a package with a custom output directory:**
+```bash
+OUTPUT_DIR=/custom/path ./recreate-package.sh package_name
+```
 
-## Output
+## Visual Interface
 
-- Recreated package: `~/recreated_packages/package_name-version-arch.pkg.tar.zst`
-- MD5 checksum: `~/recreated_packages/package_name-version-arch.pkg.tar.zst.md5`
+The script features a modern, color-coded interface that:
+- Uses blue, cyan, and white for standard operations
+- Highlights success messages in green
+- Shows warnings in yellow
+- Displays errors in red
+- Provides clear step-by-step progress indicators
 
-## Warnings
+## Output Files
 
-- This script requires sudo permissions to access and copy system files.
-- Recreated packages may not be identical to the original packages, especially if system configurations have been modified.
-- Use recreated packages at your own risk. They are not official packages and may not include all original metadata.
+The script creates the following files:
+
+- **Recreated Package**: `~/recreated_packages/package_name-version-arch.pkg.tar.zst`
+- **MD5 Checksum**: `~/recreated_packages/package_name-version-arch.pkg.tar.zst.md5`
+- **Temporary Files** (if not cleaned): `~/recreate_package_package_name/`
+
+## Advanced Usage
+
+### Installing Recreated Packages
+
+After creating a package, you can install it using:
+
+```bash
+sudo pacman -U ~/recreated_packages/package_name-version-arch.pkg.tar.zst
+```
+
+### Distributing Packages
+
+Recreated packages can be distributed to other Arch-based systems. However, be aware of:
+- Architecture compatibility
+- Dependency requirements
+- License restrictions
+
+### Customization
+
+You can modify the script to change:
+- Output directory: Edit the `outputDir` variable
+- Compression method: Modify the `bsdtar` command options
+- Color scheme: Adjust the color definition variables
+
+## Troubleshooting
+
+### Common Issues
+
+**Permission denied errors:**
+- Make sure you're running the script with sudo privileges for reading system files
+
+**Package not found:**
+- Verify the package is installed using `pacman -Q package_name`
+
+**Missing dependencies in recreated package:**
+- Dependencies are copied from the installed package; ensure all dependencies were correctly installed
+
+**Disk space issues:**
+- Check available space in your home directory for temporary files
+- Large packages may require significant temporary space
 
 ## Contributing
 
-Contributions, issues, and feature requests are welcome. Feel free to check the [issues page](https://github.com/yourusername/package-recreator/issues) if you want to contribute.
+Contributions are welcome! Here's how you can contribute:
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
@@ -74,9 +167,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- Inspired by the need to recreate packages in Arch Linux environments
-- Thanks to the Arch Linux community for their extensive documentation
+- Original concept and implementation by Tales A. Mendonça (talesam@gmail.com)
+- Color scheme and interface improvements by the Community team
+- Thanks to the Arch Linux community for their extensive documentation and tools
 
 ## Disclaimer
 
-This script is not officially associated with or endorsed by Arch Linux or any of its derivatives. Use it responsibly and at your own risk.
+This script is not officially associated with or endorsed by Arch Linux or any of its derivatives. Use it responsibly and at your own risk. The recreated packages may not be identical to the original packages, especially if system configurations have been modified.
