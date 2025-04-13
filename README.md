@@ -42,7 +42,7 @@ This tool is particularly valuable for:
 
 ```bash
 # Download the script
-curl -O https://raw.githubusercontent.com/yourusername/package-recreator/main/recreate-package.sh
+curl -O https://raw.githubusercontent.com/talesam/package-recreator/main/recreate-package.sh
 
 # Make it executable
 chmod +x recreate-package.sh
@@ -55,7 +55,7 @@ sudo mv recreate-package.sh /usr/local/bin/recreate-package
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/package-recreator.git
+git clone https://github.com/talesam/package-recreator.git
 
 # Navigate to the directory
 cd package-recreator
